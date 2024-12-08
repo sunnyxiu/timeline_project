@@ -1,0 +1,557 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="./CSVJS.js"></script>
+  <script src="https://code.jquery.com/jquery-latest.min.js"></script>
+  <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+  <script src="https://d3js.org/d3.v7.min.js" charset="utf-8"></script>
+  <!-- Color scale -->
+  <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
+
+  <style type="text/css">
+    .axis path,
+    .axis line {
+      fill: none;
+      stroke: black;
+      shape-rendering: crispEdges;
+    }
+
+    .axis text {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10px;
+    }
+
+    .timeline-label, .timeline-label-date {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+    }
+
+   
+
+    #timeline2 .axis {
+      transform: translate(0px,40px);
+      -ms-transform: translate(0px,40px); /* IE 9 */
+      -webkit-transform: translate(0px,40px); /* Safari and Chrome */
+      -o-transform: translate(0px,40px); /* Opera */
+      -moz-transform: translate(0px,40px); /* Firefox */
+    }
+
+    .coloredDiv {
+      height:20px; width:20px; float:left;
+    }
+
+    .domain {
+      color: grey;
+    }
+    
+    #agree-points-btn:hover,
+    #disagree-points-btn:hover {
+      cursor: pointer;
+    }
+
+    .buttonContainer {
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 300px;
+    }
+  
+    
+    .brush .selection {
+      fill: rgb(202, 245, 255);
+      fill-opacity: 0.3;
+      stroke: none;
+    }
+
+    .timeline-axis-advice .domain,
+    .timeline-axis-customer .domain,
+    .timeline-axis-servant .domain,
+    .timeline-axis-welfare .domain,
+    .timeline-axis-responsibility .domain,
+    .timeline-axis-otherCountry .domain,
+    .timeline-axis-definition .domain {display: none;}
+
+    .summary {
+      display:flex;
+    }
+
+    .pieChart,.geminiReply {
+      border: 5px solid #F2EFEF;
+      margin: 10px;
+      padding: 10px;
+      display: none;
+    }
+
+    
+
+    .topic-label-customer,
+    .topic-label-servant,
+    .topic-label-welfare,
+    .topic-label-responsibility,
+    .topic-label-otherCountry,
+    .topic-label-advice,
+    .topic-label-definition {
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .topic-label-customer:hover,
+    .topic-label-servant:hover,
+    .topic-label-welfare:hover,
+    .topic-label-responsibility:hover,
+    .topic-label-otherCountry:hover,
+    .topic-label-advice:hover,
+    .topic-label-definition:hover {
+      fill: grey;
+    }
+
+    .buttonContainer img {
+      height: 30px;
+      width: 30px;
+    }
+
+    .agree-points-btn-bg {
+      background-color: #48abc3;
+      height: 50px;
+      width: 50px;
+      padding:10px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    } 
+    .agree-points-btn-bg:hover {
+      background-color: rgb(160, 224, 240);
+    }
+    .agree-points-btn-bg:active  {
+      background-color: rgb(4, 150, 187);
+    }
+    .disagree-points-btn-bg {
+      background-color:#f6eb94;
+      height: 50px;
+      width: 50px;
+      padding:10px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .disagree-points-btn-bg:hover {
+      background-color: #f9f5d4;
+    }
+
+    .disagree-points-btn-bg:active {
+      background-color: #f3e34e;
+    }
+
+
+  </style>
+  <script type="module">
+    //import { GoogleGenerativeAI } from "@google/generative-ai";
+    window.onload = function() {
+      fetchAndReadCSV('討論區留言.xlsx', function (data) {
+        console.log('數據加載完成:', data);
+        
+        let width = 1000;
+        let height = 50;
+        let topicHeight = 30;
+        let margin = {left: 60, right:30, top: 30, bottom:30}
+        // 時間軸長度起始跟結束對到的時間點
+
+        const bufferTime = 24 * 60 * 60 * 1000 * 10; // 1 天的毫秒数
+        const startTime = 1714262400000;
+        const lastResponseTime = 1726444800000;
+        let xScale = d3.scaleTime()
+            .domain([startTime, lastResponseTime + bufferTime]) // 起始和結束時間
+            .range([margin.left, width-60]); // 與時間軸的範圍一致
+
+        let govReplyData = [
+          { label: "提案", timestamp: 1714262400000, date: "04/28" },
+          { label: "第一次回應", timestamp: 1720483200000, date: "07/09" }, // 在起始時間後的位置
+          { label: "第二次回應", timestamp: 1724025600000, date: "08/19" }, // 在中間的位置
+          { label: "第三次回應", timestamp: 1726444800000, date: "09/16" },  // 在結束時間前的位置
+        ];
+
+        let selectedComment = data,
+            selectedAgreeComment = agreeArray.length,
+            selectedDisagreeComment = disagreeArray.length;
+
+        const topicArray = ["customer", "servant", "welfare", "responsibility", "otherCountry", "advice", "definition"];
+        const topicNameArray = ["乘客權益","空服員負擔", "寵物的動物福利", "肇事責任歸屬","國際經驗參考", "具體建議", "寵物定義釐清"];
+
+        // 設定箭頭的大小
+        let arrowWidth = 10;
+        let arrowHeight = 10;
+
+        // 定義箭頭的三角形坐標
+        let arrowPoints = [
+            [width, 0], // 右上角
+            [width + arrowWidth, arrowHeight / 2], // 中間尖端
+            [width, arrowHeight] // 右下角
+        ];
+
+        let showAgreePoint = true;
+        let showDisagreePoint = true;
+
+        function timelineMain() {
+          let svg = d3.select("#timeline_main").append("svg")
+            .attr("width", width)
+            .attr("height", 100)
+            .append("g")
+            .attr("transform", `translate(${margin.left}, 0)`);
+
+          // 添加时间轴
+          svg.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .attr("class", "timeline-axis-main")
+            .call(d3.axisBottom(xScale)
+              .ticks(0) // 不显示刻度
+              .tickSize(0)
+              .tickFormat("")) // 不显示刻度标签);
+         
+          svg.selectAll(".timeline-point-group")
+            .data(govReplyData)
+            .enter()
+            .append("g") // 創建一个分組
+            .attr("class", "timeline-point-group")
+            .attr("transform", d => `translate(${xScale(d.timestamp)}, ${height})`) // 設置組的位置
+            .each(function(d) {
+                // 在組中添加點
+                d3.select(this)
+                    .append("circle")
+                    .attr("class", "timeline-point")
+                    .attr("r", 5) // 點的半徑
+                    .style("fill", "grey");
+
+                // 在組中添加標籤
+                d3.select(this)
+                    .append("text")
+                    .attr("class", "timeline-label")
+                    .attr("y", 20) // 相對於的垂直位置
+                    .attr("text-anchor", "middle") // 居中對齊
+                    .text(d.label || ""); // 顯示的標籤内容
+                // 在組中添加標籤
+                d3.select(this)
+                    .append("text")
+                    .attr("class", "timeline-label-date")
+                    .attr("y", 38) // 相對於點的垂直位置
+                    .attr("text-anchor", "middle") // 居中對齊
+                    .text(d.date || ""); // 顯示的標籤日期内容
+            });
+          
+          // 選擇你的 SVG 容器繪製箭頭
+          let axis = d3.select(".timeline-axis-main"); 
+
+          axis.append("polygon")
+              .attr("points", arrowPoints.map(d => d.join(",")).join(" "))
+              .attr("fill", "grey")// 設定箭頭顏色
+              .attr("transform", `translate(${-margin.left-10}, ${-arrowHeight/2})`); 
+
+          // 在時間軸上加點(支持)
+          svg.selectAll(".timeline-agree-point")
+              .data(agreeArray)
+              .enter()
+              .append("circle")
+              .attr("class", "timeline-agree-point")
+              .attr("cx", d => xScale(d["timestamp_Real"])) // 使用时间比例尺计算点的位置
+              .attr("cy", height - 30) // 固定點的 Y 位置
+              .attr("r", 5) // 點的半徑
+              .style("fill", "#48abc3")// 設置點的顏色
+              .style("opacity", .9); 
+
+          // 在時間軸上加點(其他)
+          svg.selectAll(".timeline-disagree-point")
+              .data(disagreeArray)
+              .enter()
+              .append("circle")
+              .attr("class", "timeline-disagree-point")
+              .attr("cx", d => xScale(d["timestamp_Real"])) // 使用时间比例尺计算点的位置
+              .attr("cy", height - 30) // 固定點的 Y 位置
+              .attr("r", 5) // 點的半徑
+              .style("fill", "#f6eb94")
+              .style("opacity", .9);; // 設置點的顏色
+
+          // 按鈕點擊事件：移除點(支持)
+          d3.select("#agree-points-btn").on("click", () => {
+              if(showAgreePoint) 
+              {
+                svg.selectAll(".timeline-agree-point").remove();
+                showAgreePoint = false;
+              }
+              else{
+                svg.selectAll(".timeline-agree-point")
+                  .data(agreeArray)
+                  .enter()
+                  .append("circle")
+                  .attr("class", "timeline-agree-point")
+                  .attr("cx", d => xScale(d["timestamp_Real"])) // 使用时间比例尺计算点的位置
+                  .attr("cy", height - 30) // 固定點的 Y 位置
+                  .attr("r", 5) // 點的半徑
+                  .style("fill", "#48abc3")// 設置點的顏色
+                  .style("opacity", .9); 
+                  showAgreePoint = true;
+              }
+          });
+
+          // 按鈕點擊事件：移除點(其他)
+          d3.select("#disagree-points-btn").on("click", () => {
+              if(showDisagreePoint) 
+              {
+                svg.selectAll(".timeline-disagree-point").remove();
+                showDisagreePoint = false;
+              }
+              else{
+                svg.selectAll(".timeline-disagree-point")
+                  .data(disagreeArray)
+                  .enter()
+                  .append("circle")
+                  .attr("class", "timeline-disagree-point")
+                  .attr("cx", d => xScale(d["timestamp_Real"])) // 使用时间比例尺计算点的位置
+                  .attr("cy", height - 30) // 固定點的 Y 位置
+                  .attr("r", 5) // 點的半徑
+                  .style("fill", "#f6eb94")// 設置點的顏色
+                  .style("opacity", .9); 
+                  showDisagreePoint = true;
+              }
+          });
+          
+          const brushWidth = 50;
+          // 添加 Brush（框選功能）
+          const brush = d3.brushX()
+            .extent([[30, height-brushWidth], [width-60, height+brushWidth]]) // 限制框選範圍
+            .on("end", function (event) {
+              if (!event.selection) return; // 如果沒有選擇，直接返回
+              const [x0, x1] = event.selection; // 獲取選擇的像素範圍
+              const selectedTimeRange = [new Date(xScale.invert(x0)).getTime(), new Date(xScale.invert(x1)).getTime()]; // 轉換為時間範圍
+              console.log("Selected Time Range:", selectedTimeRange);
+              selectedComment = [];
+              selectedAgreeComment = 0;
+              selectedDisagreeComment = 0;
+              data.forEach(d=>{
+                if(d.timestamp_Real > selectedTimeRange[0] && d.timestamp_Real < selectedTimeRange[1]){
+                  selectedComment.push(d);
+                  if(d["贊成論點/其他想法"] === "贊成論點") selectedAgreeComment++;
+                  else selectedDisagreeComment++;
+              }})
+
+              console.log(selectedComment);
+              d3.select('.pieChart').selectAll('*').remove();
+              drawPieChart();
+              document.querySelector('.pieChart').style.display = 'block'; // 顯示 .pieChart
+              document.querySelector('.geminiReply').style.display = 'block'; // 顯示 .geminiReply
+      
+              console.log("start");
+              document.querySelector(".geminiReply").innerHTML = "";
+              fetch("http://localhost:3000/classify", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ selectedComment }),
+              })
+              .then(async response => {
+                  if (!response.ok) {
+                      // Check for server error and log response text
+                      const errorText = await response.text();
+                      throw new Error(`Server error: ${errorText}`);
+                  }
+                  return response.json(); // Process as JSON if valid
+              })
+              .then(result => {document.querySelector(".geminiReply").innerHTML = result.response;})
+              .catch(error => console.error("Fetch error:", error.message));
+            });
+
+            svg.append("g")
+            .attr("class", "brush")
+            .call(brush);
+
+        };
+
+        timelineMain();
+
+        function timelineTopic(topicName, idx) {
+          let svg = d3.select(`#timeline_${topicName}`).append("svg")
+            .attr("width", width)
+            .attr("height", 50)
+            .append("g")
+            .attr("transform", `translate(${margin.left}, 0)`);
+
+          // 添加时间轴
+          svg.append("g")
+            .attr("transform", `translate(0, ${topicHeight})`)
+            .attr("class", `timeline-axis-${topicName}`)
+            .call(d3.axisBottom(xScale)
+              .ticks(0) // 不显示刻度
+              .tickSize(0)
+              .tickFormat("")) // 不显示刻度标签);
+          /*
+          svg.selectAll(".timeline-point-group")
+            .data(govReplyData)
+            .enter()
+            .append("g") // 創建一个分組
+            .attr("class", "timeline-point-group")
+            .attr("transform", d => `translate(${xScale(d.timestamp)}, ${height})`) // 設置組的位置
+            .each(function(d) {
+                // 在組中添加點
+                d3.select(this)
+                    .append("circle")
+                    .attr("class", "timeline-point")
+                    .attr("r", 5) // 點的半徑
+                    .style("fill", "grey");
+                
+                // 在組中添加標籤
+                d3.select(this)
+                    .append("text")
+                    .attr("class", "timeline-label")
+                    .attr("y", 20) // 相對於的垂直位置
+                    .attr("text-anchor", "middle") // 居中對齊
+                    .text(d.label || ""); // 顯示的標籤内容
+                // 在組中添加標籤
+                d3.select(this)
+                    .append("text")
+                    .attr("class", "timeline-label-date")
+                    .attr("y", 38) // 相對於點的垂直位置
+                    .attr("text-anchor", "middle") // 居中對齊
+                    .text(d.date || ""); // 顯示的標籤日期内容
+            });*/
+          
+          // 選擇你的timeline繪製箭頭
+          let axis = d3.select(`.timeline-axis-${topicName}`); 
+          /*
+          axis.append("polygon")
+              .attr("points", arrowPoints.map(d => d.join(",")).join(" "))
+              .attr("fill", "grey")// 設定箭頭顏色
+              .attr("transform", `translate(${-margin.left-10}, ${-arrowHeight/2})`); 
+          */
+          axis.append("text")
+            .text(`${topicNameArray[idx]}`)
+            .attr("class", `topic-label-${topicName}`)
+            .attr("fill", "black")
+            .attr("dominant-baseline", "middle") // 文字垂直居中对齐
+
+          d3.select(`.topic-label-${topicName}`).on("click", () => {
+            console.log(`${topicName}`);
+          });
+
+
+          // 在時間軸上加點(支持)
+          svg.selectAll(".timeline-agree-point")
+              .data(data.filter(d => d[`${topicNameArray[idx]}`] === 1))
+              .enter()
+              .append("circle")
+              .attr("class", "timeline-agree-point")
+              .attr("cx", d => xScale(d["timestamp_Real"])) // 使用时间比例尺计算点的位置
+              .attr("cy", topicHeight) // 固定點的 Y 位置
+              .attr("r", 5) // 點的半徑
+              .style("fill", "grey")// 設置點的顏色
+              .style("opacity", .9); 
+        }
+        topicArray.forEach((d, i) => { timelineTopic(d, i, topicNameArray[i])});
+
+
+        function drawPieChart(){
+          // set the dimensions and margins of the graph
+          let pieWidth = 300,
+              pieHeight = 300,
+              pieMargin = 40;
+
+          // The radius of the pieplot is half the width or half the height (smallest one). I subtract a bit of margin.
+          let radius = Math.min(pieWidth, pieHeight) / 2 - pieMargin
+          
+          // append the svg object to the div called 'my_dataviz'
+          let svg = d3.select(".pieChart")
+            .append("svg")
+              .attr("width", pieWidth)
+              .attr("height", pieHeight)
+            .append("g")
+              .attr("transform", "translate(" + pieWidth / 2 + "," + pieHeight / 2 + ")");
+
+          // Create data
+          let piedata = {"贊成論點": selectedAgreeComment, "其他想法": selectedDisagreeComment}
+
+          // set the color scale
+          let color = d3.scaleOrdinal()
+            .domain(["a","b"])
+            .range(["#48abc3","#f6eb94"]);
+
+          // Compute the position of each group on the pie:
+          let pie = d3.pie()
+            .value(function(d) {return d.value; })
+          let data_ready = pie(d3.entries(piedata))
+          // Now I know that group A goes from 0 degrees to x degrees and so on.
+          
+          // shape helper to build arcs:
+          let arcGenerator = d3.arc()
+            .innerRadius(0)
+            .outerRadius(radius)
+
+          // Build the pie chart: Basically, each part of the pie is a path that we build using the arc function.
+          svg
+            .selectAll('mySlices')
+            .data(data_ready)
+            .enter()
+            .append('path')
+              .attr('d', arcGenerator)
+              .attr('fill', function(d){ console.log(d);return(color(d.data.key)) })
+              .attr("stroke", "white")
+              .style("stroke-width", "2px")
+              .style("opacity", 0.7)
+
+          // Now add the annotation. Use the centroid method to get the best coordinates
+          svg
+            .selectAll('mySlices')
+            .data(data_ready)
+            .enter()
+            .append('text')
+            .attr("transform", function(d) { return "translate(" + arcGenerator.centroid(d) + ")"; })
+            .style("text-anchor", "middle")
+            .style("font-size", 17)
+            .style("fill","black")
+            .each(function(d) {
+              const textElement = d3.select(this);
+
+              // 第一行显示 key
+              textElement.append("tspan")
+                .attr("x", 0)
+                .attr("dy", "-0.5em") // 向上偏移
+                .text(d=>{if(d.data.value !== 0){return d.data.key;}});
+
+              // 第二行显示 value
+              textElement.append("tspan")
+                .attr("x", 0)
+                .attr("dy", "1em") // 向下偏移
+                .text(d => {if(d.data.value !== 0){return `(${d.data.value})`;}});
+            });
+        }
+        drawPieChart();
+
+      });
+    }
+  </script>
+</head>
+<body>
+  <div>
+    <div id="timeline_customer"></div>
+    <div id="timeline_servant"></div>
+    <div id="timeline_welfare"></div>
+    <div id="timeline_responsibility"></div>
+    <div id="timeline_otherCountry"></div>
+    <div id="timeline_advice"></div>
+    <div id="timeline_definition"></div>
+    <div id="timeline_main"></div>
+    <div class="buttonContainer">
+      <div class="agree-points-btn-bg">
+        <img src="./support_button.png" id="agree-points-btn" />
+      </div>
+      <div class="disagree-points-btn-bg">
+        <img src="./other_button.png" id="disagree-points-btn" />
+      </div>
+    </div>
+  
+    <div class="summary">
+      <div class="pieChart"></div>
+      <div class="geminiReply"></div>
+    </div>
+  </div>
+</body>
+</html>

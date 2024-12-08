@@ -1,0 +1,28 @@
+
+// homeController      = com.udn.openup.view.spring.HomeController@750dcc54
+// actsController      = com.udn.openup.view.spring.acts.ActsController@2ac8daaf
+// apiController       = com.udn.openup.view.spring.api.APIController@7908100c
+// commentsController  = com.udn.openup.view.spring.comments.CommentsController@3a8b06f8
+// faqController       = com.udn.openup.view.spring.common.FAQController@18be1dda
+// sectionsController  = com.udn.openup.view.spring.common.SectionsController@78fb16fd
+// endorseController   = 
+// ideaSearchController= com.udn.openup.view.spring.idea.IdeaSearchController@d12debc
+// proposeController   = 
+// memberController    = com.udn.openup.view.spring.members.MemberController@7535d92
+// policiesController  = com.udn.openup.view.spring.policies.PoliciesController@7dfa69ae
+// policiesSearchController = com.udn.openup.view.spring.policies.SearchController@5f948bf9
+// whitebooksController= com.udn.openup.view.spring.policies.WhitebooksController@71ed9d26
+// profiles.active = 
+// debug.console.log(message);
+var debug = {
+    isDebug: true,
+    console: {
+        log: function (msg) {
+            if (debug.isDebug && typeof (console) != 'undefined' && console.log) {
+                console.log(msg);
+                // console.trace();
+            }
+        }
+    },
+    attributes: {}
+};

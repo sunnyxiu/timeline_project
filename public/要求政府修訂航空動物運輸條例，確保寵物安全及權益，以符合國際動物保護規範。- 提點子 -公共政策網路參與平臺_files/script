@@ -1,0 +1,37 @@
+
+var messages = {};
+
+messages["COMMON_QUERY_NOT_FOUND"] = "查無資料";
+    
+messages["COMMON_SUCCESS"] = "成功";
+    
+messages["COMMON_FAIL"] = "失敗";
+    
+messages["COMMON_IO_FILE_NOT_FOUND"] = "找不到檔案";
+    
+messages["MESSAGE_NOT_FOUND"] = "找不到這一則訊息";
+    
+messages["USER_LOGIN_FAIL"] = "帳號或密碼錯誤";
+    
+messages["USER_NOT_EXISTS"] = "使用者不存在";
+    
+messages["USER_WRONG_PASSWORD"] = "密碼不正確";
+    
+messages["USER_PASSWORD_NOT_EQUAL"] = "密碼不相符";
+    
+messages["SESSION_NOT_LOGIN"] = "您必須完成簽入作業，才能進入此網站！";
+    
+messages["SESSION_LOGOUTED"] = "您已登出，要再進入網站，請重新執行登入作業！";
+    
+messages["SESSION_EXPIRED"] = "對不起，您太久沒有動作，為安全考量，系統已將您離線，請重新執行登入作業！";
+    
+messages["I_0001"] = "測試";
+    
+messages["I_ATTENTIONS_NOT_ATTENTION"] = "您尚未關注此議題";
+    
+messages["I_ATTENTIONS_ATTENTIONED"] = "您已關注過此議題";
+    
+messages["I_ATTENTIONS_CANCEL_SUCCESS"] = "取消關注成功";
+    
+messages["I_ATTENTIONS_SUCCESS"] = "關注成功";
+    

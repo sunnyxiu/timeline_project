@@ -1,0 +1,2 @@
+function loginProcess(){_showLoginForIdeaDialog({mode:"msg_01",title:"小提醒",buttons:[{"text":"確認","click":function(){window.location.assign($("#loginUrl").attr("href"))}}]})}function loginBeforePropose(){_showLoginForIdeaDialog({mode:"msg_propose",title:"訊息",disableCloseBtn:true,buttons:[{"text":"確認","click":function(){window.location.reload()}}]})}
+function loginBeforeEndorse(){_showLoginForIdeaDialog({mode:"msg_endorse",title:"訊息",disableCloseBtn:true,buttons:[{"text":"確認","click":function(){window.location.reload()}}]})};
