@@ -33706,6 +33706,7 @@
 
         .geminiReply, .geminiReply ul, .geminiReply li {
           font-size: 12px;
+          line-height: 1.5;
         }
 
         .topic-label-customer,
@@ -34077,7 +34078,10 @@
                       }
                       return response.json(); // Process as JSON if valid
                   })
-                  .then(result => {document.querySelector(".geminiReply").innerHTML = result.response;})
+                  .then(result => {
+                    document.querySelector(".geminiReply").style.display = "block";
+                    document.querySelector(".geminiReply").innerHTML = result.response;
+                  })
                   .catch(error => console.error("Fetch error:", error.message));
                 });
 
