@@ -33699,6 +33699,9 @@
           margin: 10px;
           padding: 20px;
           display: none;
+          width: 750px;
+          align-items: center;
+          justify-content: center;
         }
 
         .geminiReply, .geminiReply ul, .geminiReply li {
@@ -33775,15 +33778,15 @@
         .loader {
           border: 4px solid rgba(0, 0, 0, .1);
           border-left-color: transparent;
-          width: 36px;
-          height: 36px;
+          width: 70px;
+          height: 70px;
         }
 
         .loader {
           border: 4px solid rgba(0, 0, 0, .1);
           border-left-color: transparent;
-          width: 36px;
-          height: 36px;
+          width: 70px;
+          height: 70px;
           animation: spin89345 1s linear infinite;
         }
 
@@ -34056,10 +34059,10 @@
                   document.querySelector('.geminiReply').style.display = 'block'; // 顯示 .geminiReply
                   
                   console.log("start");
-                  document.querySelector(".geminiReply").innerHTML = 
-                    `/* From Uiverse.io by Fernando-sv */ 
-                    <div class="loader"></div>`;
-                  fetch("http://localhost:3000/classify", {
+                  document.querySelector(".geminiReply").style.display = "flex"; // 确保父容器可见
+                  /* From Uiverse.io by Fernando-sv */
+                  document.querySelector(".geminiReply").innerHTML = `<div class="loader"></div>`;
+                  fetch("/api/classify", {
                       method: "POST",
                       headers: {
                           "Content-Type": "application/json",
