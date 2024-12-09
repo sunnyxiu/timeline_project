@@ -34046,16 +34046,27 @@
                   selectedComment = [];
                   selectedAgreeComment = 0;
                   selectedDisagreeComment = 0;
+                  agreeArray = [];
+                  disagreeArray = [];
                   data.forEach(d=>{
                     if(d.timestamp_Real > selectedTimeRange[0] && d.timestamp_Real < selectedTimeRange[1]){
                       selectedComment.push(d);
-                      if(d["贊成論點/其他想法"] === "贊成論點") selectedAgreeComment++;
-                      else selectedDisagreeComment++;
+                      if(d["贊成論點/其他想法"] === "贊成論點") {
+                        selectedAgreeComment++;
+                        agreeArray.push(d);
+                      }
+                      else {
+                        selectedDisagreeComment++;
+                        disagreeArray.push(d);
+                      }
                   }})
 
                   console.log(selectedComment);
                   d3.select('.pieChart').selectAll('*').remove();
                   drawPieChart();
+                  document.querySelector(".supportNum").innerHTML = agreeArray.length;
+                  document.querySelector(".otherNum").innerHTML = disagreeArray.length;
+                  renew();
                   document.querySelector('.pieChart').style.display = 'block'; // 顯示 .pieChart
                   document.querySelector('.geminiReply').style.display = 'block'; // 顯示 .geminiReply
                   
