@@ -23,7 +23,7 @@ module.exports = async (req, res) => {
             if (msg["寵物的動物福利"]) topics.push("寵物的動物福利");
             if (msg["肇事責任歸屬"]) topics.push("肇事責任歸屬");
             if (msg["國際經驗參考"]) topics.push("國際經驗參考");
-            if (msg["具體建議"]) topics.push("具體建議");
+            if (msg["潛力與管理建議"]) topics.push("潛力與管理建議");
             if (msg["寵物定義釐清"]) topics.push("寵物定義釐清");
             if (topics.length === 0) topics.push("其他");
 
@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
 
         const prompt = `
         以下是一些留言，已清楚標記是否屬於「贊成論點」或「其他想法」，以及對應的觀點標記。請根據標記進行分類統整，做各觀點分類留言內容統整摘要(每個觀點分類不超過50字)，並以以下格式輸出結果。
-        觀點分類類別包含 乘客權益, 空服員負擔, 寵物的動物福利, 肇事責任歸屬, 國際經驗參考, 具體建議, 寵物定義釐清, 其他 8種
+        觀點分類類別包含 乘客權益, 空服員負擔, 寵物的動物福利, 肇事責任歸屬, 國際經驗參考, 潛力與管理建議, 寵物定義釐清, 其他 8種
 
         <div>
         <strong>贊成論點的留言總結</strong>
