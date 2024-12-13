@@ -33614,6 +33614,7 @@
       <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
       <script src="https://code.jquery.com/jquery-latest.min.js"></script>
       <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+      <script src="https://d3js.org/d3.v4.js"></script>
       <script src="https://d3js.org/d3.v7.min.js" charset="utf-8"></script>
       <!-- Color scale -->
       <script src="https://d3js.org/d3-scale-chromatic.v1.min.js"></script>
@@ -33674,10 +33675,11 @@
         .timeline-axis-advice .domain,
         .timeline-axis-customer .domain,
         .timeline-axis-servant .domain,
-        .timeline-axis-welfare .domain,
+        .timeline-axis-perspective .domain,
+        .timeline-axis-situation .domain,
         .timeline-axis-responsibility .domain,
-        .timeline-axis-otherCountry .domain,
-        .timeline-axis-definition .domain {display: none;}
+        .timeline-axis-definition .domain,
+        .timeline-axis-otherCountry .domain { color: #E8E8E8;}
 
         .summary {
           display:flex;
@@ -33707,7 +33709,8 @@
 
         .topic-label-customer,
         .topic-label-servant,
-        .topic-label-welfare,
+        .topic-label-perspective,
+        .topic-label-situation,
         .topic-label-responsibility,
         .topic-label-otherCountry,
         .topic-label-advice,
@@ -33718,7 +33721,8 @@
 
         .topic-label-customer:hover,
         .topic-label-servant:hover,
-        .topic-label-welfare:hover,
+        .topic-label-perspective:hover,
+        .topic-label-situation:hover,
         .topic-label-responsibility:hover,
         .topic-label-otherCountry:hover,
         .topic-label-advice:hover,
@@ -33801,8 +33805,87 @@
           fill: #F7B501;
         }
 
-        .propose {
-          color: #48abc3;
+        .proposal {
+          display: flex;
+        }
+
+        .timeline_tab {
+          display: flex;
+        }
+
+        .all_tab, .topic_tab {
+          margin: 15px;
+          padding: 10px;
+        }
+
+        .activeTab {
+          border-bottom: solid #f5df4d;
+        }
+        .all_tab:hover, .topic_tab:hover {
+          background-color: #E8E8E8;
+          cursor: pointer;
+        }
+
+        .all_content {
+          display: block;
+        }
+
+        .topic_content {
+          display: none;
+          margin-bottom: 30px;
+        }
+
+        .intro {
+          padding: 12px;
+        }
+        .proposal_name_dummy {
+          text-align: center;
+          line-height: 60px;
+          margin-left: 12px;
+          margin-right: 12px;
+          padding: 8px; 
+          border: solid white;
+        }
+
+        .proposal_name {
+          text-align: center;
+          line-height: 60px;
+          margin-left: 12px;
+          margin-right: 12px;
+          color: white;
+          background-color: #AAAAAA;
+          padding: 8px;
+          border: solid white;
+        }
+        
+        #timeline_main {
+          padding-left: 60px;
+        }
+
+        #timeline_definition,
+        #timeline_otherCountry,
+        #timeline_responsibility,
+        #timeline_customer,
+        #timeline_perspective,
+        #timeline_situation,
+        #timeline_servant,
+        #timeline_advice {
+          position: relative;
+        }
+
+        .topic_tooltip {
+          border: none;
+          border-radius: 5px;
+          padding: 15px;
+          min-width: 400px;
+          text-align: left;
+          color: black;
+          position: absolute; /* 確保 tooltip 不影響其他元素佈局 */
+          z-index: 1000;
+        }
+
+        .timelineContainer{
+          padding: 10px 0;
         }
 
 
@@ -33812,6 +33895,33 @@
         window.onload = function() {
           fetchAndReadCSV('討論區留言.xlsx', function (data) {
             console.log('數據加載完成:', data);
+
+            // Tab 點選控制
+            const allTab = document.querySelector(".all_tab");
+            const topicTab = document.querySelector(".topic_tab");
+            const allContent = document.querySelector(".all_content");
+            const topicContent = document.querySelector(".topic_content");
+            allTab.addEventListener("click", function() {
+                // 檢查是否已經有 activeTab 類
+                if (!allTab.classList.contains("activeTab")) {
+                    topicTab.classList.remove("activeTab");
+                    topicContent.style.display = "none";
+                    allTab.classList.add("activeTab");
+                    allContent.style.display = "block";
+                }
+            });
+
+            topicTab.addEventListener("click", function() {
+                // 檢查是否已經有 activeTab 類
+                if (!topicTab.classList.contains("activeTab")) {
+                    allTab.classList.remove("activeTab");
+                    allContent.style.display = "none";
+                    topicTab.classList.add("activeTab");
+                    topicContent.style.display = "block";
+                }
+            });
+
+            
             const buttons2 = document.querySelectorAll('.sort-btnT');
             const buttons = document.querySelectorAll('.sort-btn');
 
@@ -33873,9 +33983,9 @@
               });
             });
             
-            let width = 1000;
+            let width = 900;
             let height = 50;
-            let topicHeight = 30;
+            let topicHeight = 15;
             let margin = {left: 60, right:30, top: 30, bottom:30}
             // 時間軸長度起始跟結束對到的時間點
 
@@ -33899,8 +34009,8 @@
             const totalAgreeComment = [...agreeArray];
             const totalDisagreeComment = [...disagreeArray];
             
-            const topicArray = ["definition","otherCountry","responsibility","customer", "welfare", "servant", "advice"];
-            const topicNameArray = ["寵物定義釐清","國際經驗參考","肇事責任歸屬","乘客權益", "寵物的動物福利","空服員負擔", "潛力與管理建議" ];
+            const topicArray = ["definition","otherCountry","responsibility","customer", "perspective", "situation", "servant", "advice"];
+            const topicNameArray = ["寵物定義釐清","國際經驗參考","肇事責任歸屬","乘客權益", "對寵物的看法","寵物搭機現況","空服員負擔", "潛力與管理建議" ];
 
             // 設定箭頭的大小
             let arrowWidth = 10;
@@ -33927,11 +34037,14 @@
               svg.append("g")
                 .attr("transform", `translate(0, ${height})`)
                 .attr("class", "timeline-axis-main")
-                .call(d3.axisBottom(xScale)
-                  .ticks(0) // 不显示刻度
-                  .tickSize(0)
-                  .tickFormat("")) // 不显示刻度标签);
-            
+                .call(
+                  d3.axisBottom(xScale)
+                    .ticks(d3.timeMonth.every(1)) // 每个月显示一个刻度
+                    .tickFormat(d3.timeFormat("%b")) // 使用短月份名称 (e.g., Jan, Feb)
+                    .tickSize(3) // 可选：设置刻度线长度
+                );
+              
+              
               svg.selectAll(".timeline-point-group")
                 .data(govReplyData)
                 .enter()
@@ -33950,14 +34063,14 @@
                     d3.select(this)
                         .append("text")
                         .attr("class", "timeline-label")
-                        .attr("y", 20) // 相對於的垂直位置
+                        .attr("y", 30) // 相對於的垂直位置
                         .attr("text-anchor", "middle") // 居中對齊
                         .text(d.label || ""); // 顯示的標籤内容
                     // 在組中添加標籤
                     d3.select(this)
                         .append("text")
                         .attr("class", "timeline-label-date")
-                        .attr("y", 38) // 相對於點的垂直位置
+                        .attr("y", 48) // 相對於點的垂直位置
                         .attr("text-anchor", "middle") // 居中對齊
                         .text(d.date || ""); // 顯示的標籤日期内容
                 });
@@ -34041,7 +34154,7 @@
               const brushWidth = 50;
               // 添加 Brush（框選功能）
               const brush = d3.brushX()
-                .extent([[30, height-brushWidth], [width-60, height+brushWidth]]) // 限制框選範圍
+                .extent([[60, height-brushWidth], [width-60, height+brushWidth]]) // 限制框選範圍
                 .on("end", function (event) {
                   if (!event.selection) return; // 如果沒有選擇，直接返回
                   const [x0, x1] = event.selection; // 獲取選擇的像素範圍
@@ -34108,10 +34221,116 @@
 
             timelineMain();
 
+            function timelineRef() {
+              let svg = d3.select("#timeline_reference").append("svg")
+                .attr("width", width)
+                .attr("height", 80)
+                .append("g")
+                .attr("transform", `translate(${margin.left}, 0)`);
+
+              // 添加时间轴
+              svg.append("g")
+                .attr("transform", `translate(0, ${height})`)
+                .attr("class", "timeline-axis-ref")
+                .call(
+                  d3.axisBottom(xScale)
+                    .ticks(d3.timeMonth.every(1)) // 每个月显示一个刻度
+                    .tickFormat(d3.timeFormat("%b")) // 使用短月份名称 (e.g., Jan, Feb)
+                    .tickSize(3) // 可选：设置刻度线长度
+                );
+              
+              
+              svg.selectAll(".timeline-point-group")
+                .data(govReplyData)
+                .enter()
+                .append("g") // 創建一个分組
+                .attr("class", "timeline-point-group")
+                .attr("transform", d => `translate(${xScale(d.timestamp)}, ${height})`) // 設置組的位置
+                .each(function(d) {
+                    // 在組中添加點
+                    d3.select(this)
+                        .append("circle")
+                        .attr("class", "timeline-point")
+                        .attr("r", 5) // 點的半徑
+                        .style("fill", "grey");
+
+                    // 在組中添加標籤
+                    d3.select(this)
+                        .append("text")
+                        .attr("class", "timeline-label")
+                        .attr("y", -20) // 相對於的垂直位置
+                        .attr("text-anchor", "middle") // 居中對齊
+                        .text(d.label || ""); // 顯示的標籤内容
+                    // 在組中添加標籤
+                    d3.select(this)
+                        .append("text")
+                        .attr("class", "timeline-label-date")
+                        .attr("y", -38) // 相對於點的垂直位置
+                        .attr("text-anchor", "middle") // 居中對齊
+                        .text(d.date || ""); // 顯示的標籤日期内容
+                });
+              
+              // 選擇你的 SVG 容器繪製箭頭
+              let axis = d3.select(".timeline-axis-ref"); 
+
+              axis.append("polygon")
+                  .attr("points", arrowPoints.map(d => d.join(",")).join(" "))
+                  .attr("fill", "grey")// 設定箭頭顏色
+                  .attr("transform", `translate(${-margin.left-10}, ${-arrowHeight/2})`); 
+
+            };
+            timelineRef();
+
             function timelineTopic(topicName, idx) {
+              // create a tooltip
+              let tooltip;
+
+              // Three function that change the tooltip when user hover / move / leave a cell
+              let mouseover = function(d) {
+                let commentData = d3.select(this).datum(); // Access bound data
+
+                tooltip = d3.select(`#timeline_${topicName}`)
+                .append("div")
+                  .style("opacity", 0)
+                  .attr("class", "topic_tooltip")
+                  .style("font-size", "16px")
+                  .style("background-color", (d) => {
+                    if(commentData["贊成論點/其他想法"] === "贊成論點") return "#48abc3";
+                    else return "#f6eb94";
+                  });
+                
+                let date = new Date(commentData["timestamp_Real"]);
+                // 獲取月份和日期
+                let month = date.getMonth() + 1; // 月份 (0 是 1 月，所以需要 +1)
+                let day = date.getDate(); // 日期
+
+                let formattedDate = `${month}/${day}`; // 格式化為 "月/日"
+                tooltip
+                  .transition()
+                  .duration(200)
+                  .style("opacity", 1)
+                tooltip
+                    .html("<span>留言日期：</span>"+ formattedDate + "<br><span>留言內容: </span>" + commentData['留言內容']) // + d.Prior_disorder + "<br>" + "HR: " +  d.HR)
+                    .style("left", (d3.pointer(event)[0] +30) + "px")
+                    .style("top", (d3.pointer(event)[1] +30) + "px")
+              }
+              let mousemove = function(d) {
+                tooltip
+                  .style("left", (d3.pointer(event)[0] +30) + "px")
+                  .style("top", (d3.pointer(event)[1] +30) + "px")
+              }
+              let mouseleave = function(d) {
+                tooltip
+                  .transition()
+                  .duration(200)
+                  .style("opacity", 0)
+
+                tooltip.remove();
+              }
+              
               let svg = d3.select(`#timeline_${topicName}`).append("svg")
                 .attr("width", width)
-                .attr("height", 50)
+                .attr("height", 30)
                 .append("g")
                 .attr("transform", `translate(${margin.left}, 0)`);
 
@@ -34194,7 +34413,8 @@
               function removeActiveLabel(){
                 document.querySelector('.topic-label-customer').classList.remove('activeLabel');
                 document.querySelector('.topic-label-servant').classList.remove('activeLabel');
-                document.querySelector('.topic-label-welfare').classList.remove('activeLabel');
+                document.querySelector('.topic-label-situation').classList.remove('activeLabel');
+                document.querySelector('.topic-label-perspective').classList.remove('activeLabel');
                 document.querySelector('.topic-label-responsibility').classList.remove('activeLabel');
                 document.querySelector('.topic-label-otherCountry').classList.remove('activeLabel');
                 document.querySelector('.topic-label-advice').classList.remove('activeLabel');
@@ -34202,24 +34422,25 @@
               }
 
 
-              // 在時間軸上加點(支持)
-              svg.selectAll(".timeline-agree-point")
+              // 在時間軸上加點
+              svg.selectAll(".topic-timeline-point")
                   .data(data.filter(d => d[`${topicNameArray[idx]}`] === 1))
                   .enter()
                   .append("circle")
-                  .attr("class", "timeline-agree-point")
+                  .attr("class", "topic-timeline-point")
                   .attr("cx", d => xScale(d["timestamp_Real"])) // 使用时间比例尺计算点的位置
                   .attr("cy", topicHeight) // 固定點的 Y 位置
                   .attr("r", 5) // 點的半徑
-                  .style("fill", "grey")// 設置點的顏色
+                  .style("fill", (d) => {
+                    if(d["贊成論點/其他想法"] === "其他想法") return "#f6eb94";
+                    else return "#48abc3";
+                  })// 設置點的顏色
+                  .on("mouseover", mouseover)
+                  .on("mousemove", mousemove)
+                  .on("mouseleave", mouseleave)
                   .style("opacity", .9); 
             }
             topicArray.forEach((d, i) => { timelineTopic(d, i, topicNameArray[i])});
-
-            d3.select("topic-label-definition").append("rect")
-              .attr("width", 10)
-              .attr("height", 10)
-              .attr("fill","black");
 
             function drawPieChart(){
               // set the dimensions and margins of the graph
@@ -34312,24 +34533,54 @@
         <div class="rdqMsgLoadmaskOverlay hide"
           data-bind="overlayLoadmask: {viewId: &#39;firstLoadmaskView&#39;, fadeInOut : true}" style="display: none;">
         </div>
-        
-        <div>
-          <h3><strong>留言議題變化</strong><h3>
-          <div class="propose">針對訴求一</div>
-          <div id="timeline_definition"></div>
-          <div id="timeline_otherCountry"></div>
-          <hr>
-          <div class="propose">針對訴求二</div>
-          <div id="timeline_responsibility"></div>
-          <div id="timeline_customer"></div>
-          <hr>
-          <div class="propose">針對訴求三</div>
-          <div id="timeline_welfare"></div>
-          <hr>
-          <div class="propose">針對訴求四</div>
-          <div id="timeline_servant"></div>
-          <div id="timeline_advice"></div>
-          <hr>
+        <div class="timeline_tab">
+          <div class="all_tab activeTab">所有留言</div>
+          <div class="topic_tab">議題分類</div>
+        </div>
+        <div class="topic_content">
+          <div class="intro">
+              此圖表表示所有議題的相關時間軸，每個點代表一則留言，顏色代表立場，一條時間軸表示一個議題以及相關留言，可點擊議題來觀看提到該議題的所有留言</span>
+          </div>
+          <div class="proposal">
+            <div class="proposal_name_dummy" style="width: 110px;"></div>
+            <div>
+              <div id="timeline_reference">
+            </div>
+          </div>
+          </div>
+          <div class="proposal">
+            <div class="proposal_name">針對訴求一</div>
+            <div class="timelineContainer">
+              <div id="timeline_definition"></div>
+              <div id="timeline_otherCountry"></div>
+            </div>
+          </div>
+          <div class="proposal">
+            <div class="proposal_name">針對訴求二</div>
+            <div class="timelineContainer">
+              <div id="timeline_responsibility"></div>
+              <div id="timeline_customer"></div>
+            </div>
+          </div>
+          <div class="proposal">
+            <div class="proposal_name">針對訴求三</div>
+            <div class="timelineContainer">
+              <div id="timeline_perspective"></div>
+              <div id="timeline_situation"></div>
+            </div>
+          </div>
+          <div class="proposal">
+            <div class="proposal_name">針對訴求四</div>
+            <div class="timelineContainer">
+              <div id="timeline_servant"></div>
+              <div id="timeline_advice"></div>
+            </div>
+          </div>
+        </div>
+        <div class="all_content">
+          <div class="intro">
+            此圖表表示所有留言的分布時間軸，每個點代表一則留言，顏色代表立場，可用滑鼠在時間軸上框選時間區段以觀看該時間區段的留言以及相關分析</span>
+          </div>
           <div id="timeline_main"></div>
           <div class="buttonContainer">
             <div class="agree-points-btn-bg">
@@ -34449,9 +34700,6 @@
 
             <!-- ko foreach: { data: rightMessageListView.list, as: 'messageViewItem', afterRender: boardViewModel.afterRenderCallback} -->
             <div id="comment_negative">
-
-
-
             </div>
             <!-- /ko -->
           </div>
